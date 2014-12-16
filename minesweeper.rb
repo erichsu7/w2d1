@@ -53,14 +53,6 @@ class Game
 
   def play
     puts "Welcome to Minesweeper. Good luck!"
-    # puts "Would you like to play a new game (n) or load a game (l)?"
-    # play_load = gets.chomp.downcase
-    #
-    # if play_load == "l"
-    #   puts "Type a filename to load:"
-    #   filename = gets.chomp
-    #   old_game = YAML::load
-    # end
 
     until win?
 
