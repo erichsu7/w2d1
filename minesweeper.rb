@@ -1,5 +1,6 @@
 require 'yaml'
 
+ puts "new"
 class Game
   attr_accessor :game_board
 
