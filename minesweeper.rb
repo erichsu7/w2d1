@@ -1,6 +1,5 @@
 require 'yaml'
 
- puts "new"
 class Game
   attr_accessor :game_board
 
@@ -60,16 +59,10 @@ class Game
       render_board
       puts "Choose a tile, separating row and column by a space: "
       user_pos_choice = gets.chomp.split(" ").map {|coord| coord.to_i}
-      p user_pos_choice
       user_row, user_col = user_pos_choice[0], user_pos_choice[1]
       user_tile = @game_board[user_row][user_col]
-      puts "Choose to reveal (r) or flag (f) this tile:"
+      puts "Choose to reveal (r) or flag (f) this tile, or save this game (s):"
       move_type = gets.chomp.downcase
-
-      p "Revealed: #{user_tile.revealed?}"
-      p "Bombed: #{user_tile.bombed?}"
-      p "Flagged: #{user_tile.flagged?}"
-      p "Fringe: #{user_tile.fringe?}"
 
       if move_type == "r"
         if user_tile.bombed?
@@ -86,12 +79,21 @@ class Game
         else
           user_tile.reveal_tile
         end
-      else #move_type is flag
+      elsif move_type == "f"
         if user_tile.flagged?
           user_tile.flagged = false
         else
           user_tile.flagged = true
         end
+      elsif move_type == "s"
+        puts "Enter filename to save at:"
+        filename = gets.chomp
+
+        File.write(filename, YAML.dump(self))
+
+      else
+        puts "Invalid entry"
+        next
       end
     end
 
@@ -192,16 +194,15 @@ class Tile
   end
 
   def reveal_tile
-    return if self.bombed? || self.flagged?
+    return self if flagged?
+    return self if revealed?
+
     self.revealed = true
-    if !self.fringe?
-      self.neighbors.each do |neighbor|
-        #p neighbor.position
-        neighbor.reveal_tile unless neighbor.bombed? || neighbor.flagged? || neighbor.revealed?
-      end
-    else
-      return
+
+    if !bombed? && neighbor_bomb_count == 0
+      neighbors.each { |neighbor| neighbor.reveal_tile }
     end
+    self
   end
 
 end
@@ -231,18 +232,6 @@ class Board
     end
   end
 
-  def show_rows
-    game_board = @rows.map do |row|
-      row.map do |element|
-        element.position
-      end
-    end
-
-    game_board.each do |row|
-      p row
-    end
-  end
-
   def bomb_positions
     bomb_positions = []
 
@@ -254,13 +243,19 @@ class Board
       bomb_positions << random_pos unless bomb_positions.include?(random_pos)
     end
 
-    p bomb_positions
     bomb_positions
   end
 
 end
 
-g = Game.new
-tile = Tile.new([3, 3])
 
-g.play
+
+if $PROGRAM_NAME == __FILE__
+
+  case ARGV.count
+  when 0
+    Game.new.play
+  when 1
+    YAML.load_file(ARGV.shift).play
+  end
+end
